@@ -37,8 +37,13 @@ jobs:
       - name: Deploy on server
         run: |
           ssh private-server "
+            mkdir -p /home/ec2-user/app &&
             cd /home/ec2-user/app &&
-            git pull origin deploy &&
+            if [ ! -d .git ]; then
+              git clone -b deploy https://github.com/VicenteParada/backend-devops2.git .
+            else
+              git pull origin deploy
+            fi &&
             echo 'PORT=${{ secrets.PORT }}' > .env &&
             echo 'DB_HOST=${{ secrets.DB_HOST }}' >> .env &&
             echo 'DB_PORT=${{ secrets.DB_PORT }}' >> .env &&
