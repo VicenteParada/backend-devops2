@@ -11,10 +11,13 @@ jobs:
 
     steps:
       - name: Configure SSH client with Bastion
+        env:
+          BASTION_KEY: ${{ secrets.BASTION_KEY }}
+          SERVER_KEY: ${{ secrets.SERVER_KEY }}
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.BASTION_KEY }}" > ~/.ssh/bastion.pem
-          echo "${{ secrets.SERVER_KEY }}" > ~/.ssh/server.pem
+          echo "$BASTION_KEY" > ~/.ssh/bastion.pem
+          echo "$SERVER_KEY" > ~/.ssh/server.pem
           chmod 600 ~/.ssh/bastion.pem ~/.ssh/server.pem
           cat <<EOF > ~/.ssh/config
           Host bastion-host
