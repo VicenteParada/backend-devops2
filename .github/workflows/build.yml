@@ -1,35 +1,47 @@
-name: CI Build
+name: Deploy Backend
 
 on:
   push:
     branches:
-      - main
       - deploy
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Create env file for testing/build
+      - name: Configure SSH client with Bastion
         run: |
-          echo "PORT=${{ secrets.PORT }}" >> .env
-          echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
-          echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
-          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
-          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
-          echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+          mkdir -p ~/.ssh
+          echo "${{ secrets.BASTION_KEY }}" > ~/.ssh/bastion.pem
+          echo "${{ secrets.SERVER_KEY }}" > ~/.ssh/server.pem
+          chmod 600 ~/.ssh/bastion.pem ~/.ssh/server.pem
+          cat <<EOF > ~/.ssh/config
+          Host bastion-host
+            HostName ${{ secrets.BASTION_HOST }}
+            User ${{ secrets.BASTION_USER }}
+            IdentityFile ~/.ssh/bastion.pem
+            StrictHostKeyChecking no
 
-      - name: Install dependencies
-        run: npm install
+          Host private-server
+            HostName ${{ secrets.SERVER_HOST }}
+            User ${{ secrets.SERVER_USER }}
+            IdentityFile ~/.ssh/server.pem
+            ProxyJump bastion-host
+            StrictHostKeyChecking no
+          EOF
 
-      - name: Build Docker Image
-        run: docker build -t backend-service:latest .
-
+      - name: Deploy on server
+        run: |
+          ssh private-server "
+            cd /home/ec2-user/app &&
+            git pull origin deploy &&
+            echo 'PORT=${{ secrets.PORT }}' > .env &&
+            echo 'DB_HOST=${{ secrets.DB_HOST }}' >> .env &&
+            echo 'DB_PORT=${{ secrets.DB_PORT }}' >> .env &&
+            echo 'DB_USER=${{ secrets.DB_USER }}' >> .env &&
+            echo 'DB_PASSWORD=${{ secrets.DB_PASSWORD }}' >> .env &&
+            echo 'DB_NAME=${{ secrets.DB_NAME }}' >> .env &&
+            docker-compose down &&
+            docker-compose up -d --build
+          "
