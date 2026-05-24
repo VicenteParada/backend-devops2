@@ -55,6 +55,6 @@ jobs:
             echo 'DB_PASSWORD=${{ secrets.DB_PASSWORD }}' >> .env &&
             echo 'DB_NAME=${{ secrets.DB_NAME }}' >> .env &&
             docker-compose down &&
-            docker-compose build --no-cache &&
+            docker build -t app-backend-app:latest . &&
             docker-compose up -d
           "
