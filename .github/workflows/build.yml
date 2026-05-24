@@ -54,7 +54,8 @@ jobs:
             echo 'DB_USER=${{ secrets.DB_USER }}' >> .env &&
             echo 'DB_PASSWORD=${{ secrets.DB_PASSWORD }}' >> .env &&
             echo 'DB_NAME=${{ secrets.DB_NAME }}' >> .env &&
+            sudo dnf install -y docker-buildx-plugin &&
             docker-compose down &&
-            docker build -t app-backend-app:latest . &&
+            docker-compose build --no-cache &&
             docker-compose up -d
           "
