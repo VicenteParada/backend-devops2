@@ -40,7 +40,11 @@ jobs:
             mkdir -p /home/ec2-user/app &&
             cd /home/ec2-user/app &&
             if [ ! -d .git ]; then
-              git clone -b deploy https://github.com/VicenteParada/backend-devops2.git .
+              git init &&
+              git remote add origin https://github.com/VicenteParada/backend-devops2.git &&
+              git fetch origin deploy &&
+              git checkout -f deploy &&
+              git branch --set-upstream-to=origin/deploy deploy
             else
               git pull origin deploy
             fi &&
